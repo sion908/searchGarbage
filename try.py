@@ -33,6 +33,7 @@ def BGR2HSV(_img):
 	hsv[..., 2] = max_v.copy()
 	
 	return hsv
+#enddef BGR2HSV
 
 def imgchange(img,perf):
 	max = np.max(img)
@@ -43,6 +44,10 @@ def imgchange(img,perf):
 	img = img // perf
 
 	img = img *perf
+
+	return img
+
+def noisecut(img):
 	#EasyNoiseCut
 	H,W = img.shape
 	k=[[0,1,0],[1,0,1],[0,1,0]]
@@ -57,7 +62,6 @@ def imgchange(img,perf):
 				img[h+1,w+1] = img[h,w+1]
 			elif img[h+1,w]*3 == np.sum([[0,0,0],[1,0,1],[0,1,0]]*img[h:h+3,w:w+3]):
 				img[h+1,w+1] = img[h+1,w]
-
 
 	return img
 
@@ -95,10 +99,10 @@ def main(num):
 	img_v = img_hsv[...,2].copy()
 
 	# cv2.imwrite(path,name) 0-255
-	# cv2.imwrite('img/output/0.png',img_orig)
 
 	for i in [30]: #1,20,30,50
 		img_i = imgchange(img_v,i)
+		img_i = noisecut(img_i)
 		cv2.imwrite('img/output/' + str(i) + '-' + num + '.png',img_i)
 		img_c,gplace = SeekGravity(img_i,i)
 		cv2.imwrite('img/output/' + str(i) + '-' + num + '-G.png',img_c)
