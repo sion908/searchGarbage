@@ -41,43 +41,56 @@ def imgchange(img,perf):
 
 	img = (img - min) * 255 / (max - min)
 
+	# H,W = img.shape
+	# k=[[0,1,0],[1,0,1],[0,1,0]]
+	# for h in range(H-2):
+	# 	for w in range(W-2):
+	# 		img[h+1,w+1] = round( np.sum( k * img[ h : h+3 , w : w+3 ] ) / 4 ) 
+
 	img = img // perf
 
 	img = img *perf
 
 	return img
 
-def noisecut(img):
+def noisecut(img,perf):
 	#EasyNoiseCut
 	H,W = img.shape
 	k=[[0,1,0],[1,0,1],[0,1,0]]
 	for h in range(H-2):
 		for w in range(W-2):
-			
-			if img[h,w+1]*3 == np.sum([[0,1,0],[0,0,1],[0,1,0]]*img[h:h+3,w:w+3]):
-				img[h+1,w+1] = img[h,w+1]
-			elif img[h,w+1]*3 == np.sum([[0,1,0],[1,0,0],[0,1,0]]*img[h:h+3,w:w+3]):
-				img[h+1,w+1] = img[h,w+1]
-			elif img[h,w+1]*3 == np.sum([[0,1,0],[1,0,1],[0,0,0]]*img[h:h+3,w:w+3]):
-				img[h+1,w+1] = img[h,w+1]
-			elif img[h+1,w]*3 == np.sum([[0,0,0],[1,0,1],[0,1,0]]*img[h:h+3,w:w+3]):
-				img[h+1,w+1] = img[h+1,w]
+			img[h+1,w+1] = round( np.sum( k * img[ h : h+3 , w : w+3 ] ) / 4 * perf ) * perf
+
+			# if img[h,w+1]*3 == np.sum([[0,1,0],[0,0,1],[0,1,0]]*img[h:h+3,w:w+3]):
+			# 	img[h+1,w+1] = img[h,w+1]
+			# elif img[h,w+1]*3 == np.sum([[0,1,0],[1,0,0],[0,1,0]]*img[h:h+3,w:w+3]):
+			# 	img[h+1,w+1] = img[h,w+1]
+			# elif img[h,w+1]*3 == np.sum([[0,1,0],[1,0,1],[0,0,0]]*img[h:h+3,w:w+3]):
+			# 	img[h+1,w+1] = img[h,w+1]
+			# elif img[h+1,w]*3 == np.sum([[0,0,0],[1,0,1],[0,1,0]]*img[h:h+3,w:w+3]):
+			# 	img[h+1,w+1] = img[h+1,w]
 
 	return img
+	#enddef noisecut
 
 def SeekGravity(img,perf):
 	import math
 	H,W = img.shape
 	pernum = 255 // perf + 1
+	print(pernum)
 	SGline = np.empty((2,pernum))
 	# print(H,W)
 	img_make = np.zeros((H,W,3),dtype=int)
-	colorparetto = np.array([[244,0,0],[244,244,0],[244,0,244],[0,244,0],[0,244,244],[0,0,244],[122,0,0],[0,122,0],[0,0,122]])
+	colorparetto = np.array([[255,0,0],[0,255,0],[0,0,255],[255,255,0],[0,255,255],[255,0,255],[255,127,0],[0,255,127],[127,0,255]])
+	imag = np.zeros((H,W),dtype=int)
 	for i in range(pernum):
 
 		a = np.where(img==i*perf)
-
+		imag[a] = 255
+		cv2.imwrite('img/output/color-' + str(i) + '.png',imag)
+		imag = np.zeros((H,W),dtype=int)
 		len = a[0].shape
+		
 		SGh = np.sum( a[0] ) / len
 		SGw = np.sum( a[1] ) / len
 		img_make[a] = colorparetto[i]
@@ -85,7 +98,7 @@ def SeekGravity(img,perf):
 	# print(SGline)
 	SGline[0] -= H/2
 	SGline[1] -= W/2
-
+	print(SGline)
 	ans = np.empty(pernum)
 	for i in range(pernum):
 		ans[i] = math.sqrt(SGline[0,i] ** 2 + SGline[1,i] ** 2)
@@ -102,18 +115,19 @@ def main(num):
 
 	for i in [30]: #1,20,30,50
 		img_i = imgchange(img_v,i)
-		img_i = noisecut(img_i)
+		# img_i = noisecut(img_i,i)
 		cv2.imwrite('img/output/' + str(i) + '-' + num + '.png',img_i)
 		img_c,gplace = SeekGravity(img_i,i)
 		cv2.imwrite('img/output/' + str(i) + '-' + num + '-G.png',img_c)
 		print(num,end='')
 		print(gplace[-5:])
 	# print('end')
+#enddef main
 
 if __name__ == '__main__':
-	main('b-0')
-	main('b-1')
-	main('b-2')
-	main('b-3')
 	main('o-0')
-	main('o-1')
+	# main('b-1')
+	# main('b-2')
+	# main('b-3')
+	# main('o-0')
+	# main('o-1')
