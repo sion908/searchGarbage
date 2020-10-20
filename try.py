@@ -102,7 +102,10 @@ def SeekGravity(img,perf):
 	ans = np.empty(pernum)
 	for i in range(pernum):
 		ans[i] = math.sqrt(SGline[0,i] ** 2 + SGline[1,i] ** 2)
-	# print(SGline)
+	# printScale
+	# img_make[H//2-1:H//2+2,W//2-100:W//2+2] = [0,0,0]
+	# img_make[H//2-6:H//2-1,W//2-1:W//2+2] = [0,0,0]
+	# img_make[H//2-6:H//2-1,W//2-100:W//2-97] = [0,0,0]
 	return img_make,ans
 
 def main(num):
@@ -120,12 +123,12 @@ def main(num):
 		img_c,gplace = SeekGravity(img_i,i)
 		cv2.imwrite('img/output/' + str(i) + '-' + num + '-G.png',img_c)
 		print(num,end='')
-		print(gplace[-5:])
+		print(gplace[-6:-1])
 	# print('end')
 #enddef main
 
 if __name__ == '__main__':
-	main('o-0')
+	main('b-0')
 	# main('b-1')
 	# main('b-2')
 	# main('b-3')
