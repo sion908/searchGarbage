@@ -13,7 +13,7 @@ def BGR2HSV(_img):
 	max_v = np.max(img, axis=2).copy()
 	min_v = np.min(img, axis=2).copy()
 	min_arg = np.argmin(img, axis=2)
-
+	
 	# H
 	hsv[..., 0][np.where(max_v == min_v)]= 0
 	## if min == B
@@ -37,11 +37,10 @@ def BGR2HSV(_img):
 def QuantizationImg(img,perf):
 	max = np.max(img)
 	min = np.min(img)
-
+	print(max,min)
 	img = (img - min) * 255 / (max - min)
 
 	cv2.imwrite('img/output/ghjt.png',img)
-	sys.exit()
 	img = img // perf
 
 	img = img *perf
@@ -100,7 +99,7 @@ def SeekGravity(img,perf):
 	return img_make,img_serchcent,ans
 
 def main(num):
-	img_orig = cv2.imread('img/input/Dust-' + num + '.jpg')
+	img_orig = cv2.imread('img/input/Dust/Dust-' + num + '.jpg')
 	# RGB > HSV
 	img_hsv = BGR2HSV(img_orig)
 	img_v = img_hsv[...,2].copy()
@@ -119,8 +118,8 @@ def main(num):
 		img_ans[H: , :W] = img_cent
 
 		cv2.imwrite('img/output/' + str(i) + '-' + num + '.png',img_ans)
-		print(num,end='')
-		print(gplace[-6:-1]) 
+		# print(num,end='')
+		# print(gplace[-6:-1]) 
 	# print('end')
 
 if __name__ == '__main__':
