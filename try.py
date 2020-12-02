@@ -1,7 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 import sys
+import math
 
 # BGR -> HSV
 def BGR2HSV(_img):
@@ -33,52 +33,36 @@ def BGR2HSV(_img):
 	hsv[..., 2] = max_v.copy()
 	
 	return hsv
-#enddef BGR2HSV
 
-def imgchange(img,perf):
+def QuantizationImg(img,perf):
 	max = np.max(img)
 	min = np.min(img)
 
 	img = (img - min) * 255 / (max - min)
 
-	# H,W = img.shape
-	# k=[[0,1,0],[1,0,1],[0,1,0]]
-	# for h in range(H-2):
-	# 	for w in range(W-2):
-	# 		img[h+1,w+1] = round( np.sum( k * img[ h : h+3 , w : w+3 ] ) / 4 ) 
-
+	cv2.imwrite('img/output/ghjt.png',img)
+	sys.exit()
 	img = img // perf
 
 	img = img *perf
 
 	return img
 
-def noisecut(img,perf):
+def NoiseCut(img,perf):
 	#EasyNoiseCut
 	H,W = img.shape
-	k=[[0,1,0],[1,0,1],[0,1,0]]
 	for h in range(H-2):
 		for w in range(W-2):
-			img[h+1,w+1] = round( np.sum( k * img[ h : h+3 , w : w+3 ] ) / 4 * perf ) * perf
-
-			# if img[h,w+1]*3 == np.sum([[0,1,0],[0,0,1],[0,1,0]]*img[h:h+3,w:w+3]):
-			# 	img[h+1,w+1] = img[h,w+1]
-			# elif img[h,w+1]*3 == np.sum([[0,1,0],[1,0,0],[0,1,0]]*img[h:h+3,w:w+3]):
-			# 	img[h+1,w+1] = img[h,w+1]
-			# elif img[h,w+1]*3 == np.sum([[0,1,0],[1,0,1],[0,0,0]]*img[h:h+3,w:w+3]):
-			# 	img[h+1,w+1] = img[h,w+1]
-			# elif img[h+1,w]*3 == np.sum([[0,0,0],[1,0,1],[0,1,0]]*img[h:h+3,w:w+3]):
-			# 	img[h+1,w+1] = img[h+1,w]
-
+			img[h+1,w+1] = np.median(img[h:h+3,w:w+3])
 	return img
-	#enddef noisecut
+	#enddef NoiseCut
 
 def SeekGravity(img,perf):
-	import math
+	
 	H,W = img.shape
 	pernum = 255 // perf + 1
-	print(pernum)
-	SGline = np.empty((2,pernum))
+	# print(pernum)
+	SGline = np.zeros((2,pernum),dtype=int)
 	# print(H,W)
 	img_make = np.zeros((H,W,3),dtype=int)
 	colorparetto = np.array([[255,0,0],[0,255,0],[0,0,255],[255,255,0],[0,255,255],[255,0,255],[255,127,0],[0,255,127],[127,0,255]])
@@ -87,26 +71,33 @@ def SeekGravity(img,perf):
 
 		a = np.where(img==i*perf)
 		imag[a] = 255
-		cv2.imwrite('img/output/color-' + str(i) + '.png',imag)
+		img_Noise = NoiseCut(imag,perf)
+		# cv2.imwrite('img/output/color-' + str(i) + '.png',img_Noise)
+		gravLine_img = np.where(img_Noise == 255)
 		imag = np.zeros((H,W),dtype=int)
-		len = a[0].shape
-		
-		SGh = np.sum( a[0] ) / len
-		SGw = np.sum( a[1] ) / len
-		img_make[a] = colorparetto[i]
-		SGline[:,i] = [SGh,SGw]
-	# print(SGline)
-	SGline[0] -= H/2
-	SGline[1] -= W/2
-	print(SGline)
+		len = gravLine_img[0].shape
+		if len[0] != 0:
+			SGh = int(np.sum( gravLine_img[0] ) / len)
+			SGw = int(np.sum( gravLine_img[1] ) / len)
+			SGline[:,i] = [SGh,SGw]
+		else:
+			SGline[:,i] = [0,0]
+		img_make[gravLine_img] = colorparetto[i]
+	# # print(SGline)
+	# SGline[0] -= int(H/2)
+	# SGline[1] -= int(W/2)
+	# # print(SGline)
 	ans = np.empty(pernum)
+	img_serchcent = np.zeros((H,W,3),dtype=int)
 	for i in range(pernum):
-		ans[i] = math.sqrt(SGline[0,i] ** 2 + SGline[1,i] ** 2)
+		img_serchcent[SGline[0,i]-2:SGline[0,i]+3,SGline[1,i]-2:SGline[1,i]+3]=colorparetto[i]
+		ans[i] = math.sqrt((SGline[0,i]-SGline[0,pernum-2]) ** 2 + (SGline[1,i]-SGline[1,pernum-2]) ** 2)
+	# cv2.imwrite('img/output/Cenyt-' + str(perf) + '.png',img_serchcent)
 	# printScale
 	# img_make[H//2-1:H//2+2,W//2-100:W//2+2] = [0,0,0]
 	# img_make[H//2-6:H//2-1,W//2-1:W//2+2] = [0,0,0]
 	# img_make[H//2-6:H//2-1,W//2-100:W//2-97] = [0,0,0]
-	return img_make,ans
+	return img_make,img_serchcent,ans
 
 def main(num):
 	img_orig = cv2.imread('img/input/Dust-' + num + '.jpg')
@@ -117,20 +108,28 @@ def main(num):
 	# cv2.imwrite(path,name) 0-255
 
 	for i in [30]: #1,20,30,50
-		img_i = imgchange(img_v,i)
-		# img_i = noisecut(img_i,i)
-		cv2.imwrite('img/output/' + str(i) + '-' + num + '.png',img_i)
-		img_c,gplace = SeekGravity(img_i,i)
-		cv2.imwrite('img/output/' + str(i) + '-' + num + '-G.png',img_c)
+		img_i = QuantizationImg(img_v,i)
+		# img_i = NoiseCut(img_i,i)
+		# cv2.imwrite('img/output/' + str(i) + '-' + num + '.png',img_i)
+		img_c,img_cent,gplace = SeekGravity(img_i,i)
+		H,W,_ = img_c.shape
+		img_ans = np.zeros((H*2,W*2,3),dtype=int)
+		img_ans[ :H, :W,0] = img_i
+		img_ans[ :H,W: ] = img_c
+		img_ans[H: , :W] = img_cent
+
+		cv2.imwrite('img/output/' + str(i) + '-' + num + '.png',img_ans)
 		print(num,end='')
-		print(gplace[-6:-1])
+		print(gplace[-6:-1]) 
 	# print('end')
-#enddef main
 
 if __name__ == '__main__':
 	main('b-0')
-	# main('b-1')
-	# main('b-2')
-	# main('b-3')
-	# main('o-0')
-	# main('o-1')
+	main('b-1')
+	main('b-2')
+	main('b-3')
+	main('o-0')
+	main('o-1')
+	main('s-0')
+	main('s-1')
+	main('s-2')
