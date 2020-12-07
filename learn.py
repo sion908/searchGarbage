@@ -27,15 +27,27 @@ def reset_seed(seed=0):
 #     test = pickle.load(fi1)
 # with open('test.pickle', mode='rb') as fi2:
 #     train_val = pickle.load(fi2)
-with open('data/dustData.pickle', mode='rb') as fi2:
+with open('data/dustData0.pickle', mode='rb') as fi2:
     dataset = pickle.load(fi2)
+with open('data/realdustData.pickle', mode='rb') as fi1:
+    datasetn = pickle.load(fi1)
+
 
 # train:valid:test = 7:1:2
-n_train = int(len(dataset) * 0.7)
-n_valid = int(len(dataset) * 0.1)
-# データセットを学習用と検証用に分割する
-train, valid_test = split_dataset_random(dataset, n_train, seed=0)
-valid, test = split_dataset_random(valid_test, n_valid, seed=0)
+# n_train = int(len(dataset) * 0.7)
+# n_valid = int(len(dataset) * 0.1)
+# # データセットを学習用と検証用に分割する
+# train, valid_test = split_dataset_random(dataset, n_train, seed=0)
+train, valid = split_dataset_random(dataset,30, seed=0)
+test,_ = split_dataset_random(datasetn,len(datasetn), seed=0)
+# valid, test = split_dataset_random(valid_test, n_valid, seed=0)
+print("imgSize train , valid , test :{},{},{}".format(len(train),len(valid),len(test)))
+# print(train,valid,test)
+# for i in [train,valid,test]:
+#     for j in i:
+#         print(j)
+# sys.exit()
+
 # イテレーターの設定
 batchsize = 5
 train_iter = iterators.SerialIterator(train, batchsize)
@@ -49,7 +61,7 @@ reset_seed(0)
 net = def_fun.MLP()
 
 # オプティマイザーの設定
-optimizer = optimizers.SGD(lr=0.01).setup(net)
+optimizer = optimizers.SGD(lr=0.001).setup(net)
 
 # 学習の実行
 max_epoch = 10
@@ -57,7 +69,8 @@ gpu_id = -1 # GPU不使用
 count = 0
 output =[]
 while train_iter.epoch < max_epoch:
-    print(count)
+    # print(count,end="")
+    # print("->",end="")
     count+=1
     train_batch = train_iter.next()
 
@@ -129,7 +142,7 @@ while True:
 print('test_accuracy:{:.04f}'.format(numpy.mean(test_accuracies)))
 
 # 学習結果の保存
-serializers.save_npz('./data/model/Robomas_mnist.model', net)
+serializers.save_npz('data/dustData_mnist.model', net)
 # 出力はこうなります。
 
 # epoch:01 train_loss:0.9035 val_loss:0.9046 val_accuracy:0.8071

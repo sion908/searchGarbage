@@ -35,8 +35,8 @@ def BGR2HSV(_img):
 	return hsv
 
 def QuantizationImg(img,perf):
-	max = np.max(img)
-	min = np.min(img)
+	max = 0.7
+	min = 0.5
 	print(max,min)
 	img = (img - min) * 255 / (max - min)
 
